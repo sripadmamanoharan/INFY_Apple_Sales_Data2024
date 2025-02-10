@@ -22,12 +22,43 @@ st.sidebar.header("📂 Upload or Select Data Source")
 uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx"])
 
 # ✅ Database Connection (SQLite Example)
-DATABASE_URL = "sqlite:///sales.db"  # Change this for MySQL or PostgreSQL
+DATABASE_URL = "sqlite:///sales.db" 
+def initialize_database():
+    conn = sqlite3.connect("sales.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sales_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            region TEXT,
+            actual_sales REAL,
+            sales_target REAL,
+            sales_vs_target REAL
+        )
+    """)
+    conn.commit()
+    conn.close()
+    
+import urllib.request
+
+db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/blob/main/sales.db"
+
+if not os.path.exists("sales.db"):
+    st.warning("⚠️ Database file 'sales.db' not found. Downloading from GitHub...")
+    urllib.request.urlretrieve(db_url, "sales.db")
+    st.success("✅ Database downloaded successfully!")
+    initialize_database()  # Ensure the table exists after download
+
 
 def load_from_database():
     engine = create_engine(DATABASE_URL)
-    df = pd.read_sql("SELECT * FROM sales_data", con=engine)
-    return df
+    try:
+        df = pd.read_sql("SELECT * FROM sales_data", con=engine)
+        return df
+    except Exception as e:
+        st.error(f"⚠️ Database error: {e}. Creating a new database...")
+        initialize_database()  # Calls function to create table if missing
+        return pd.DataFrame()  # Returns an empty DataFrame so the app doesn't break
+
 
 # ✅ Load Data Function (CSV, Excel, or Database)
 @st.cache_data
