@@ -1,0 +1,10 @@
+streamlit
+pandas
+matplotlib
+seaborn
+langchain_google_genai
+google-generativeai
+numpy
+sqlalchemy
+sqlite3
+openpyxl
