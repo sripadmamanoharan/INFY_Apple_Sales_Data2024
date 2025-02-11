@@ -138,7 +138,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGL
 def generate_ai_insights(role):
     required_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
     
-if not all(col in df.columns for col in required_columns)
+if not all(col in df.columns for col in required_columns):
         st.error("⚠️ Missing required columns in dataset. Please check the uploaded file.")
         return "Error: Missing columns in dataset."
 
@@ -161,6 +161,6 @@ if not all(col in df.columns for col in required_columns)
     return response.content
 
 
-if st.button("🔍 Generate AI Insights")
+if st.button("🔍 Generate AI Insights"):
     ai_insights = generate_ai_insights(user_role)
     st.write(ai_insights)
