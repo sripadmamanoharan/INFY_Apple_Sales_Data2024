@@ -105,25 +105,25 @@ df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
   
-    user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
+user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
 
     # ✅ KPI Metrics Based on Role
-    st.subheader(f"📈 KPI Metrics for {user_role}")
+st.subheader(f"📈 KPI Metrics for {user_role}")
 
-    if user_role == "CXO":
+if user_role == "CXO":
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Revenue", f"${df['actual_sales'].sum():,.2f}")
         col2.metric("Revenue Growth", f"{df['sales_vs_target'].mean():.2f}%")
         col3.metric("Profit Margin", "18.5%")  # Placeholder
 
-    elif user_role == "Division Head" and "region" in df.columns:  # ✅ FIXED: Added colon (:) at the end
+elif user_role == "Division Head" and "region" in df.columns:  # ✅ FIXED: Added colon (:) at the end
         region = st.sidebar.selectbox("Select Region", df["region"].unique())
         df_region = df[df["region"] == region]
         col1, col2 = st.columns(2)
         col1.metric(f"{region} Sales", f"${df_region['actual_sales'].sum():,.2f}")
         col2.metric(f"{region} Sales Growth", f"{df_region['sales_vs_target'].mean():,.2f}%")
 
-    elif user_role == "Line Manager" and "salesperson" in df.columns:
+elif user_role == "Line Manager" and "salesperson" in df.columns:
         salesperson = st.sidebar.selectbox("Select Salesperson", df["salesperson"].unique())
         df_salesperson = df[df["salesperson"] == salesperson]
         col1, col2 = st.columns(2)
