@@ -41,8 +41,7 @@ def initialize_database():
 import urllib.request
 
 db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/blob/main/sales.db"
-urllib.request.urlretrieve(db_url, "sales.db")  
-"
+urllib.request.urlretrieve(db_url, "sales.db")
 
 if not os.path.exists("sales.db"):
     st.warning("⚠️ Database file 'sales.db' not found. Downloading from GitHub...")
