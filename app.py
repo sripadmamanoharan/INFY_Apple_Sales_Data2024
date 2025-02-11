@@ -77,7 +77,7 @@ def load_data():
 
     import re
 
-df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
+    df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
 
     return df
 
