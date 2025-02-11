@@ -104,7 +104,7 @@ df['sales_target'] = df['actual_sales'] * 0.9
 df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
-    user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
+user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
 
     # ✅ KPI Metrics Based on Role
     st.subheader(f"📈 KPI Metrics for {user_role}")
