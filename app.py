@@ -84,9 +84,6 @@ def load_data():
 st.write("🛠 **Debugging: Column Names in Dataset**")
 st.write(df.columns.tolist())  # Print column names
 
-
-df = load_data()
-
 if df is not None:
     # ✅ Ensure Key Sales Metrics Exist
     df['actual_sales'] = (
