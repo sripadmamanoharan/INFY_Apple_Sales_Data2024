@@ -108,7 +108,7 @@ user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "L
 
     # ✅ KPI Metrics Based on Role
 st.subheader(f"📈 KPI Metrics for {user_role}")
-    if user_role == "CXO":
+if user_role == "CXO":
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Revenue", f"${df['actual_sales'].sum():,.2f}")
         col2.metric("Revenue Growth", f"{df['sales_vs_target'].mean():.2f}%")
@@ -129,13 +129,13 @@ st.subheader(f"📈 KPI Metrics for {user_role}")
         col2.metric(f"{salesperson} Target Achievement", f"{df_salesperson['sales_vs_target'].mean():,.2f}%")
 
     # ✅ AI-Powered Sales Insights (Google Gemini)
-    st.subheader("🔍 AI-Generated Sales Insights")
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
+st.subheader("🔍 AI-Generated Sales Insights")
+llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
-    def generate_ai_insights(role):
+def generate_ai_insights(role):
     required_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
     
-    if not all(col in df.columns for col in required_columns):
+if not all(col in df.columns for col in required_columns):
         st.error("⚠️ Missing required columns in dataset. Please check the uploaded file.")
         return "Error: Missing columns in dataset."
 
@@ -158,6 +158,6 @@ st.subheader(f"📈 KPI Metrics for {user_role}")
     return response.content
 
 
-    if st.button("🔍 Generate AI Insights"):
-        ai_insights = generate_ai_insights(user_role)
-        st.write(ai_insights)
+if st.button("🔍 Generate AI Insights"):
+    ai_insights = generate_ai_insights(user_role)
+    st.write(ai_insights)
