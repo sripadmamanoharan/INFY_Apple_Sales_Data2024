@@ -93,7 +93,7 @@ else:
 
 if df is not None:
 # ✅ Ensure Key Sales Metrics Exist
-df['actual_sales'] = (
+    df['actual_sales'] = (
     df['iphonesalesinmillionunits'] + 
     df['ipadsalesinmillionunits'] + 
     df['macsalesinmillionunits'] + 
