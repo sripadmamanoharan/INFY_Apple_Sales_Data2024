@@ -40,7 +40,7 @@ def initialize_database():
     
 import urllib.request
 
-db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/blob/main/sales.db"
+db_url = "https://raw.githubusercontent.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/main/sales.db"
 
 if not os.path.exists("sales.db"):
     st.warning("⚠️ Database file 'sales.db' not found. Downloading from GitHub...")
@@ -81,20 +81,26 @@ def load_data():
 
     return df
     
-st.write("🛠 **Debugging: Column Names in Dataset**")
-st.write(df.columns.tolist())  # Print column names
+df = load_data()
+
+if df is not None and not df.empty:
+    st.write("🛠 **Debugging: Column Names in Dataset**")
+    st.write(df.columns.tolist())  
+else:
+    st.error("⚠️ No data loaded. Check database or uploaded file.")
+
 
 if df is not None:
-    # ✅ Ensure Key Sales Metrics Exist
-    df['actual_sales'] = (
-        df['iphone_sales_(in_million_units)'] +
-        df['ipad_sales_(in_million_units)'] +
-        df['mac_sales_(in_million_units)'] +
-        df['wearables_(in_million_units)']
-    )
-    df['actual_sales'] += df['services_revenue_(in_billion_$)'] * 1000
-    df['sales_target'] = df['actual_sales'] * 0.9
-    df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+# ✅ Ensure Key Sales Metrics Exist
+df['actual_sales'] = (
+    df['iphonesalesinmillionunits'] + 
+    df['ipadsalesinmillionunits'] + 
+    df['macsalesinmillionunits'] + 
+    df['wearablesinmillionunits']
+)
+df['actual_sales'] += df['servicesrevenueinbillion'] * 1000
+df['sales_target'] = df['actual_sales'] * 0.9
+df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
@@ -126,24 +132,30 @@ if df is not None:
     llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     def generate_ai_insights(role):
-        selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
-        filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
+    required_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
+    
+    if not all(col in df.columns for col in required_columns):
+        st.error("⚠️ Missing required columns in dataset. Please check the uploaded file.")
+        return "Error: Missing columns in dataset."
 
-        prompt = f"""
-        You are an AI sales analyst. Analyze the following sales data for the role: {role}.
-        {filtered_df.to_string(index=False)}
+    filtered_df = df[required_columns]
 
-        🔍 **Key Insights:**
-        - **Top-Performing Region:**  
-        - **Fastest-Growing Segment:**  
-        - **Slowest-Growing Segment:**  
-        - **Unexpected Trends:**  
+    prompt = f"""
+    You are an AI sales analyst. Analyze the following sales data for the role: {role}.
+    {filtered_df.to_string(index=False)}
 
-        🚀 **Strategies to Optimize Sales Performance**
-        """
+    🔍 **Key Insights:**
+    - **Top-Performing Region:**  
+    - **Fastest-Growing Segment:**  
+    - **Slowest-Growing Segment:**  
+    - **Unexpected Trends:**  
 
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return response.content
+    🚀 **Strategies to Optimize Sales Performance**
+    """
+
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return response.content
+
 
     if st.button("🔍 Generate AI Insights"):
         ai_insights = generate_ai_insights(user_role)
