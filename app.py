@@ -80,6 +80,10 @@ def load_data():
     df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
 
     return df
+    
+st.write("🛠 **Debugging: Column Names in Dataset**")
+st.write(df.columns.tolist())  # Print column names
+
 
 df = load_data()
 
