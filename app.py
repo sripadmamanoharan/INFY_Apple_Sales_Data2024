@@ -47,7 +47,7 @@ if not os.path.exists("sales.db"):
     st.warning("⚠️ Database file 'sales.db' not found. Downloading from GitHub...")
     urllib.request.urlretrieve(db_url, "sales.db")
     st.success("✅ Database downloaded successfully!")
-    initialize_database()  # Ensure the table exists after download
+    initialize_database() 
 
 
 def load_from_database():
@@ -57,8 +57,8 @@ def load_from_database():
         return df
     except Exception as e:
         st.error(f"⚠️ Database error: {e}. Creating a new database...")
-        initialize_database()  # Calls function to create table if missing
-        return pd.DataFrame()  # Returns an empty DataFrame so the app doesn't break
+        initialize_database()  
+        return pd.DataFrame()  
 
 
 # ✅ Load Data Function (CSV, Excel, or Database)
@@ -71,10 +71,10 @@ def load_data():
         elif file_extension == "xlsx":
             df = pd.read_excel(uploaded_file, engine="openpyxl")
         else:
-            st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
+            st.error("Unsupported file format. Upload CSV or Excel.")
             return None
     else:
-        df = load_from_database()  # Load from database if no file is uploaded
+        df = load_from_database() 
 
     import re
 
@@ -85,14 +85,14 @@ def load_data():
 df = load_data()
 
 if df is not None and not df.empty:
-    st.write("🛠 **Debugging: Column Names in Dataset**")
+    st.write("Column Names in Dataset")
     st.write(df.columns.tolist())  
 else:
-    st.error("⚠️ No data loaded. Check database or uploaded file.")
+    st.error("No data loaded. Check database or uploaded file.")
 
 
 if df is not None:
-# ✅ Ensure Key Sales Metrics Exist
+# Ensure Key Sales Metrics Exist
     df['actual_sales'] = (
     df['iphonesalesinmillionunits'] + 
     df['ipadsalesinmillionunits'] + 
@@ -107,7 +107,7 @@ df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
   
 user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
 
-    # ✅ KPI Metrics Based on Role
+    # KPI Metrics Based on Role
 st.subheader(f"📈 KPI Metrics for {user_role}")
 
 if user_role == "CXO":
@@ -116,7 +116,7 @@ if user_role == "CXO":
         col2.metric("Revenue Growth", f"{df['sales_vs_target'].mean():.2f}%")
         col3.metric("Profit Margin", "18.5%")  # Placeholder
 
-elif user_role == "Division Head" and "region" in df.columns:  # ✅ FIXED: Added colon (:) at the end
+elif user_role == "Division Head" and "region" in df.columns:  
         region = st.sidebar.selectbox("Select Region", df["region"].unique())
         df_region = df[df["region"] == region]
         col1, col2 = st.columns(2)
@@ -131,14 +131,14 @@ elif user_role == "Line Manager" and "salesperson" in df.columns:
         col2.metric(f"{salesperson} Target Achievement", f"{df_salesperson['sales_vs_target'].mean():,.2f}%")
 
 
-    # ✅ AI-Powered Sales Insights (Google Gemini)
+    # AI-Powered Sales Insights (Google Gemini)
 st.subheader("🔍 AI-Generated Sales Insights")
 llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
 def generate_ai_insights(role):
     required_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
     
-    # ✅ FIXED: Ensuring the line is correctly indented inside the function
+    #  Ensuring the line is correctly indented inside the function
     if all(col in df.columns for col in required_columns):
         filtered_df = df[required_columns]
     else:
@@ -154,7 +154,7 @@ def generate_ai_insights(role):
     - **Slowest-Growing Segment:**  
     - **Unexpected Trends:**  
 
-    🚀 **Strategies to Optimize Sales Performance**
+    **Strategies to Optimize Sales Performance**
     """
 
     response = llm.invoke([HumanMessage(content=prompt)])
