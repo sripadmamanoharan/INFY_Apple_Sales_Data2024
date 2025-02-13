@@ -140,27 +140,29 @@ def generate_ai_insights(role):
         selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
         filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
 
+        # Limit data rows for better API results
+        filtered_df = filtered_df.head(10)
+
         prompt = f"""
-        You are an AI sales analyst. Analyze the following sales data for the role: {role}.
+        You are a senior sales analyst. Analyze the following sales data for the role: {role}.
+        Data Sample:
         {filtered_df.to_string(index=False)}
 
-        🔍 **Key Insights:**
-        - **Top-Performing Region:**  
-        - **Fastest-Growing Segment:**  
-        - **Slowest-Growing Segment:**  
-        - **Unexpected Trends:**  
+        Provide insights on:
+        - Top-performing regions or segments
+        - Underperforming areas
+        - Emerging trends or unexpected observations
+        - Practical strategies to optimize sales performance
 
-        🚀 **Strategies to Optimize Sales Performance**
+        Keep the response business-focused and concise.
         """
 
         response = llm.invoke([HumanMessage(content=prompt)])
         return response.content
 
     except Exception as e:
-        st.error(f"⚠️ API Request Failed: {e}")
-        return "❌ Failed to get insights. Try again later."
-
-
+        st.error(f"⚠️ Failed to generate AI insights: {e}")
+        return "❌ Could not retrieve insights. Try again later."
 
 
 if st.button("🔍 Generate AI Insights"):
