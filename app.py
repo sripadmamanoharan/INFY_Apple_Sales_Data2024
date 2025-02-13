@@ -136,29 +136,30 @@ st.subheader("🔍 AI-Generated Sales Insights")
 llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
 def generate_ai_insights(role):
-    required_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
-    
-    #  Ensuring the line is correctly indented inside the function
-    if all(col in df.columns for col in required_columns):
-        filtered_df = df[required_columns]
-    else:
-        filtered_df = df  # Use full DataFrame if some columns are missing
+    try:
+        selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
+        filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
 
-    prompt = f"""
-    You are an AI sales analyst. Analyze the following sales data for the role: {role}.
-    {filtered_df.to_string(index=False)}
+        prompt = f"""
+        You are an AI sales analyst. Analyze the following sales data for the role: {role}.
+        {filtered_df.to_string(index=False)}
 
-    🔍 **Key Insights:**
-    - **Top-Performing Region:**  
-    - **Fastest-Growing Segment:**  
-    - **Slowest-Growing Segment:**  
-    - **Unexpected Trends:**  
+        🔍 **Key Insights:**
+        - **Top-Performing Region:**  
+        - **Fastest-Growing Segment:**  
+        - **Slowest-Growing Segment:**  
+        - **Unexpected Trends:**  
 
-    **Strategies to Optimize Sales Performance**
-    """
+        🚀 **Strategies to Optimize Sales Performance**
+        """
 
-    response = llm.invoke([HumanMessage(content=prompt)])
-    return response.content
+        response = llm.invoke([HumanMessage(content=prompt)])
+        return response.content
+
+    except Exception as e:
+        st.error(f"⚠️ API Request Failed: {e}")
+        return "❌ Failed to get insights. Try again later."
+
 
 
 
