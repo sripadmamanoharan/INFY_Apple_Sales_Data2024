@@ -30,9 +30,9 @@ def load_data():
     if uploaded_file is not None:
         file_extension = uploaded_file.name.split(".")[-1]
         if file_extension == "csv":
-            df = pd.read_csv(uploaded_file)
+            df = pd.read_csv(uploaded_file, nrows=5000)  # Load only 5000 rows
         elif file_extension == "xlsx":
-            df = pd.read_excel(uploaded_file, engine="openpyxl")
+            df = pd.read_excel(uploaded_file, engine="openpyxl", nrows=5000)
         else:
             st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
             return None
@@ -40,9 +40,7 @@ def load_data():
         st.error("⚠️ No file uploaded.")
         return None
 
-    # ✅ Ensure Column Names are Cleaned
     df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
-
     return df
 
 df = load_data()
@@ -81,13 +79,17 @@ if df is not None:
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     def generate_ai_insights(role):
-        try:
-            prompt = f"Analyze this sales data for {role}: {df.head().to_string(index=False)}"
-            response = llm.invoke([HumanMessage(content=prompt)])
-            return response.content
-        except Exception as e:
-            return f"⚠️ AI Model Error: {e}"
+    try:
+        small_df = df.head(20)  # Only send 20 rows to AI
+        prompt = f"Analyze this sales data for {role}: {small_df.to_string(index=False)}"
+        response = llm.invoke([HumanMessage(content=prompt)])
+        return response.content
+    except Exception as e:
+        return f"⚠️ AI Model Error: {e}"
+
 
     if st.button("🔍 Generate AI Insights"):
+    with st.spinner("⏳ Generating AI insights..."):
         ai_insights = generate_ai_insights(user_role)
-        st.write(ai_insights)
+    st.write(ai_insights)
+
