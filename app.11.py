@@ -86,15 +86,16 @@ df = load_data()
 
 if df is not None:
     # ✅ Ensure Key Sales Metrics Exist
-    df['actual_sales'] = (
-        df['iphone_sales_(in_million_units)'] +
-        df['ipad_sales_(in_million_units)'] +
-        df['mac_sales_(in_million_units)'] +
-        df['wearables_(in_million_units)']
-    )
-    df['actual_sales'] += df['services_revenue_(in_billion_$)'] * 1000
-    df['sales_target'] = df['actual_sales'] * 0.9
-    df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+df['actual_sales'] = (
+    df.get('iphonesalesinmillionunits', 0) +  # Use `.get()` to avoid KeyError
+    df.get('ipadsalesinmillionunits', 0) +
+    df.get('macsalesinmillionunits', 0) +
+    df.get('wearablesinmillionunits', 0)
+)
+df['actual_sales'] += df.get('servicesrevenueinbillion', 0) * 1000
+df['sales_target'] = df['actual_sales'] * 0.9
+df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
@@ -139,7 +140,7 @@ if df is not None:
         - **Slowest-Growing Segment:**  
         - **Unexpected Trends:**  
 
-        🚀 **Strategies to Optimize Sales Performance**
+        **Strategies to Optimize Sales Performance**
         """
 
         response = llm.invoke([HumanMessage(content=prompt)])
