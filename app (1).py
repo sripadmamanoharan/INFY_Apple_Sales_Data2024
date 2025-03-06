@@ -29,6 +29,7 @@ uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx
 DATABASE_URL = "sqlite:///sales.db"
 
 def initialize_database():
+    """Creates the sales_data table if it does not exist."""
     conn = sqlite3.connect("sales.db")
     cursor = conn.cursor()
     cursor.execute("""
@@ -56,6 +57,7 @@ if not os.path.exists("sales.db"):
         st.error(f"❌ Database download failed: {e}")
 
 def load_from_database():
+    """Loads data from the SQLite database."""
     engine = create_engine(DATABASE_URL)
     try:
         df = pd.read_sql("SELECT * FROM sales_data", con=engine)
@@ -68,23 +70,36 @@ def load_from_database():
 # ✅ Load Data Function (CSV, Excel, or Database)
 @st.cache_data
 def load_data():
+    """Loads data from uploaded file or database."""
     if uploaded_file is not None:
+        st.write(f"✅ File Uploaded: {uploaded_file.name}")  # Debug message
+
         file_extension = uploaded_file.name.split(".")[-1]
-        if file_extension == "csv":
-            df = pd.read_csv(uploaded_file)
-        elif file_extension == "xlsx":
-            df = pd.read_excel(uploaded_file, engine="openpyxl")
-        else:
-            st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
+        try:
+            if file_extension == "csv":
+                df = pd.read_csv(uploaded_file, encoding="utf-8", on_bad_lines="skip")
+            elif file_extension == "xlsx":
+                df = pd.read_excel(uploaded_file, engine="openpyxl")
+            else:
+                st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
+                return None
+
+            if df is not None and not df.empty:
+                st.write("✅ Data Loaded Successfully!")  # Debug message
+                df.columns = df.columns.str.strip().str.lower().str.replace(r"[^\w]", "", regex=True)
+                return df
+            else:
+                st.error("❌ File read error. No data found in the file.")
+                return None
+        except Exception as e:
+            st.error(f"❌ Error reading file: {e}")
             return None
     else:
+        st.warning("⚠️ No file uploaded, loading from database instead...")
         df = load_from_database()
-
-    if df is not None and not df.empty:
-        df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
+        if df is None or df.empty:
+            st.error("❌ No data found in database.")
         return df
-    else:
-        return pd.DataFrame()
 
 df = load_data()
 
@@ -92,28 +107,29 @@ df = load_data()
 if df is not None and not df.empty:
     st.write("📌 Column Names in Dataset")
     st.write(df.columns.tolist())  # Print column names
+    st.write(df.head())  # Show first few rows
 
     # ✅ Ensure Key Sales Metrics Exist
     required_columns = [
-        'iphonesalesinmillionunits', 
-        'ipadsalesinmillionunits', 
-        'macsalesinmillionunits', 
-        'wearablesinmillionunits', 
-        'servicesrevenueinbillion'
+        "iphonesalesinmillionunits",
+        "ipadsalesinmillionunits",
+        "macsalesinmillionunits",
+        "wearablesinmillionunits",
+        "servicesrevenueinbillion",
     ]
-    
+
     if all(col in df.columns for col in required_columns):
-        df['actual_sales'] = (
-            df['iphonesalesinmillionunits'] +
-            df['ipadsalesinmillionunits'] +
-            df['macsalesinmillionunits'] +
-            df['wearablesinmillionunits']
+        df["actual_sales"] = (
+            df["iphonesalesinmillionunits"]
+            + df["ipadsalesinmillionunits"]
+            + df["macsalesinmillionunits"]
+            + df["wearablesinmillionunits"]
         )
-        df['actual_sales'] += df['servicesrevenueinbillion'] * 1000
-        df['sales_target'] = df['actual_sales'] * 0.9
-        df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+        df["actual_sales"] += df["servicesrevenueinbillion"] * 1000
+        df["sales_target"] = df["actual_sales"] * 0.9
+        df["sales_vs_target"] = df["actual_sales"] - df["sales_target"]
     else:
-        st.error("⚠️ Missing required columns in dataset.")
+        st.error(f"⚠️ Missing required columns! Found: {df.columns.tolist()}")
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
