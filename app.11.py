@@ -137,7 +137,6 @@ else:
     st.subheader("🔍 AI-Generated Sales Insights")
     llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
-
     def generate_ai_insights(role):
         selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
         filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
