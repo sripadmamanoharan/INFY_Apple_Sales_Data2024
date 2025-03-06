@@ -135,7 +135,8 @@ else:
 
     # ✅ AI-Powered Sales Insights (Google Gemini)
     st.subheader("🔍 AI-Generated Sales Insights")
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.environ["GOOGLE_API_KEY"])
+    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
+
 
     def generate_ai_insights(role):
         selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
