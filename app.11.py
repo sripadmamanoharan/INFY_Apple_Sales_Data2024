@@ -61,6 +61,7 @@ def load_from_database():
 
 
 # ✅ Load Data Function (CSV, Excel, or Database)
+
 @st.cache_data
 def load_data():
     if uploaded_file is not None:
@@ -75,12 +76,12 @@ def load_data():
     else:
         df = load_from_database()  # Load from database if no file is uploaded
 
-    import re
+    # ✅ Ensure Column Names are Cleaned for Consistency
+    df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
 
-df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
+    return df  # Properly indented return statement
 
-    return df
-
+# ✅ Load the Data
 df = load_data()
 
 if df is not None:
