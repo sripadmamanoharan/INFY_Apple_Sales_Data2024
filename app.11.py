@@ -26,25 +26,26 @@ uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx
 
 # ✅ Load Data Function
 @st.cache_data
-def load_data(uploaded_file):  # Pass uploaded_file as a parameter
+def load_data(uploaded_file):  # Function now takes uploaded_file as input
     if uploaded_file is not None:
         file_extension = uploaded_file.name.split(".")[-1]
         if file_extension == "csv":
             df = pd.read_csv(uploaded_file, nrows=5000)  # Load only 5000 rows
         elif file_extension == "xlsx":
-            df = pd.read_excel(uploaded_file, engine="openpyxl")  # Remove nrows (not supported in read_excel)
+            df = pd.read_excel(uploaded_file, engine="openpyxl")  # Excel doesn't support nrows
         else:
+            st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
             return None
 
         # ✅ Clean column names
         df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
         return df
 
-    return None  # Ensure function returns None if no file is uploaded
+    return None  # Return None if no file uploaded
 
-# ✅ Call load_data() with uploaded_file
+# ✅ Call load_data() with uploaded_file argument
 if uploaded_file is not None:
-    df = load_data(uploaded_file)  # Pass uploaded_file explicitly
+    df = load_data(uploaded_file)  # ✅ Pass the uploaded_file argument here
 else:
     df = None
     st.warning("⚠️ No file uploaded.")
@@ -52,7 +53,9 @@ else:
 # ✅ Display Data (Optional)
 if df is not None:
     st.write("✅ File uploaded successfully! Preview:")
-    st.dataframe(df.head())  # Show the first few rows
+    st.dataframe(df.head())  # Show first few rows
+
+
 
 df = load_data()
 
