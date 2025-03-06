@@ -9,7 +9,9 @@ from langchain_core.messages import HumanMessage
 import numpy as np
 from sqlalchemy import create_engine
 import sqlite3
-import urllib.request
+
+# ✅ Set Page Configuration FIRST
+st.set_page_config(page_title="AI Sales Dashboard", layout="wide")
 
 # ✅ Securely Load API Key
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
@@ -22,49 +24,9 @@ st.sidebar.header("📂 Upload or Select Data Source")
 # ✅ File Upload Section
 uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx"])
 
-# ✅ Database Connection (SQLite Example)
-DATABASE_URL = "sqlite:///sales.db"
-
-def initialize_database():
-    """Creates sales_data table in SQLite if it does not exist"""
-    conn = sqlite3.connect("sales.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sales_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            region TEXT,
-            actual_sales REAL,
-            sales_target REAL,
-            sales_vs_target REAL
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-# ✅ Download Database from GitHub if not found
-db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/blob/main/sales.db"
-
-if not os.path.exists("sales.db"):
-    st.warning("⚠️ Database file 'sales.db' not found. Downloading from GitHub...")
-    urllib.request.urlretrieve(db_url, "sales.db")
-    st.success("✅ Database downloaded successfully!")
-    initialize_database()  # Ensure table exists after download
-
-def load_from_database():
-    """Loads data from SQLite database"""
-    engine = create_engine(DATABASE_URL)
-    try:
-        df = pd.read_sql("SELECT * FROM sales_data", con=engine)
-        return df
-    except Exception as e:
-        st.error(f"⚠️ Database error: {e}. Creating a new database...")
-        initialize_database()
-        return pd.DataFrame()
-
-# ✅ Load Data Function (CSV, Excel, or Database)
+# ✅ Load Data Function
 @st.cache_data
 def load_data():
-    """Loads data from user-uploaded file or database"""
     if uploaded_file is not None:
         file_extension = uploaded_file.name.split(".")[-1]
         if file_extension == "csv":
@@ -75,31 +37,20 @@ def load_data():
             st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
             return None
     else:
-        df = load_from_database()
+        st.error("⚠️ No file uploaded.")
+        return None
 
-    # ✅ Ensure Column Names are Cleaned for Consistency
+    # ✅ Ensure Column Names are Cleaned
     df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
 
-    return df  # Return DataFrame
+    return df
 
-# ✅ Load the Data
 df = load_data()
 
-# ✅ Debugging: Check if DataFrame is Loaded
-if df is None:
-    st.error("⚠️ No data found. Please upload a valid CSV or Excel file.")
-elif df.empty:
-    st.warning("⚠️ The dataset is empty. Please check the uploaded file.")
-else:
-    st.success(f"✅ Data loaded successfully! Shape: {df.shape}")
-
-    # ✅ Display first 5 rows of data
-    st.subheader("📊 Preview of Uploaded Data")
-    st.write(df.head())
-
-    # ✅ Ensure Key Sales Metrics Exist
+if df is not None:
+    # ✅ Compute Sales Metrics
     df['actual_sales'] = (
-        df.get('iphonesalesinmillionunits', 0) + 
+        df.get('iphonesalesinmillionunits', 0) +
         df.get('ipadsalesinmillionunits', 0) +
         df.get('macsalesinmillionunits', 0) +
         df.get('wearablesinmillionunits', 0)
@@ -108,16 +59,15 @@ else:
     df['sales_target'] = df['actual_sales'] * 0.9
     df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
 
-    # 📌 Select Role (CXO, Division Head, Line Manager)
+    # 📌 Select Role
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
-
-    # ✅ KPI Metrics Based on Role
     st.subheader(f"📈 KPI Metrics for {user_role}")
+
     if user_role == "CXO":
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Revenue", f"${df['actual_sales'].sum():,.2f}")
         col2.metric("Revenue Growth", f"{df['sales_vs_target'].mean():.2f}%")
-        col3.metric("Profit Margin", "18.5%")  # Placeholder
+        col3.metric("Profit Margin", "18.5%")
 
     elif user_role == "Division Head" and "region" in df.columns:
         region = st.sidebar.selectbox("Select Region", df["region"].unique())
@@ -126,36 +76,17 @@ else:
         col1.metric(f"{region} Sales", f"${df_region['actual_sales'].sum():,.2f}")
         col2.metric(f"{region} Sales Growth", f"{df_region['sales_vs_target'].mean():,.2f}%")
 
-    elif user_role == "Line Manager" and "salesperson" in df.columns:
-        salesperson = st.sidebar.selectbox("Select Salesperson", df["salesperson"].unique())
-        df_salesperson = df[df["salesperson"] == salesperson]
-        col1, col2 = st.columns(2)
-        col1.metric(f"{salesperson} Sales", f"${df_salesperson['actual_sales'].sum():,.2f}")
-        col2.metric(f"{salesperson} Target Achievement", f"{df_salesperson['sales_vs_target'].mean():,.2f}%")
-
-    # ✅ AI-Powered Sales Insights (Google Gemini)
+    # ✅ AI-Powered Insights
     st.subheader("🔍 AI-Generated Sales Insights")
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     def generate_ai_insights(role):
-        selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
-        filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
-
-        prompt = f"""
-        You are an AI sales analyst. Analyze the following sales data for the role: {role}.
-        {filtered_df.to_string(index=False)}
-
-        🔍 **Key Insights:**
-        - **Top-Performing Region:**  
-        - **Fastest-Growing Segment:**  
-        - **Slowest-Growing Segment:**  
-        - **Unexpected Trends:**  
-
-        🚀 **Strategies to Optimize Sales Performance**
-        """
-
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return response.content
+        try:
+            prompt = f"Analyze this sales data for {role}: {df.head().to_string(index=False)}"
+            response = llm.invoke([HumanMessage(content=prompt)])
+            return response.content
+        except Exception as e:
+            return f"⚠️ AI Model Error: {e}"
 
     if st.button("🔍 Generate AI Insights"):
         ai_insights = generate_ai_insights(user_role)
