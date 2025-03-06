@@ -9,10 +9,14 @@ from langchain_core.messages import HumanMessage
 import numpy as np
 from sqlalchemy import create_engine
 import sqlite3
+import urllib.request
 
 # ✅ Securely Load API Key
-os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+else:
+    st.error("⚠️ GOOGLE_API_KEY not found in secrets! Please add it to Streamlit secrets.")
 
 # 🎯 Streamlit UI
 st.title("📊 AI-Powered Sales KPI Dashboard")
@@ -22,7 +26,8 @@ st.sidebar.header("📂 Upload or Select Data Source")
 uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx"])
 
 # ✅ Database Connection (SQLite Example)
-DATABASE_URL = "sqlite:///sales.db" 
+DATABASE_URL = "sqlite:///sales.db"
+
 def initialize_database():
     conn = sqlite3.connect("sales.db")
     cursor = conn.cursor()
@@ -37,17 +42,18 @@ def initialize_database():
     """)
     conn.commit()
     conn.close()
-    
-import urllib.request
 
-db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/blob/main/sales.db"
+# ✅ Check and Download Database if Missing
+db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/raw/main/sales.db"
 
 if not os.path.exists("sales.db"):
     st.warning("⚠️ Database file 'sales.db' not found. Downloading from GitHub...")
-    urllib.request.urlretrieve(db_url, "sales.db")
-    st.success("✅ Database downloaded successfully!")
-    initialize_database()  # Ensure the table exists after download
-
+    try:
+        urllib.request.urlretrieve(db_url, "sales.db")
+        st.success("✅ Database downloaded successfully!")
+        initialize_database()  # Ensure table exists
+    except Exception as e:
+        st.error(f"❌ Database download failed: {e}")
 
 def load_from_database():
     engine = create_engine(DATABASE_URL)
@@ -56,9 +62,8 @@ def load_from_database():
         return df
     except Exception as e:
         st.error(f"⚠️ Database error: {e}. Creating a new database...")
-        initialize_database()  # Calls function to create table if missing
-        return pd.DataFrame()  # Returns an empty DataFrame so the app doesn't break
-
+        initialize_database()
+        return pd.DataFrame()
 
 # ✅ Load Data Function (CSV, Excel, or Database)
 @st.cache_data
@@ -73,27 +78,42 @@ def load_data():
             st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
             return None
     else:
-        df = load_from_database()  # Load from database if no file is uploaded
+        df = load_from_database()
 
-import re
-
-df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
-
-return df
+    if df is not None and not df.empty:
+        df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
+        return df
+    else:
+        return pd.DataFrame()
 
 df = load_data()
 
-if df is not None:
+# ✅ Check if Data is Loaded
+if df is not None and not df.empty:
+    st.write("📌 Column Names in Dataset")
+    st.write(df.columns.tolist())  # Print column names
+
     # ✅ Ensure Key Sales Metrics Exist
-    df['actual_sales'] = (
-        df['iphone_sales_(in_million_units)'] +
-        df['ipad_sales_(in_million_units)'] +
-        df['mac_sales_(in_million_units)'] +
-        df['wearables_(in_million_units)']
-    )
-    df['actual_sales'] += df['services_revenue_(in_billion_$)'] * 1000
-    df['sales_target'] = df['actual_sales'] * 0.9
-    df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+    required_columns = [
+        'iphonesalesinmillionunits', 
+        'ipadsalesinmillionunits', 
+        'macsalesinmillionunits', 
+        'wearablesinmillionunits', 
+        'servicesrevenueinbillion'
+    ]
+    
+    if all(col in df.columns for col in required_columns):
+        df['actual_sales'] = (
+            df['iphonesalesinmillionunits'] +
+            df['ipadsalesinmillionunits'] +
+            df['macsalesinmillionunits'] +
+            df['wearablesinmillionunits']
+        )
+        df['actual_sales'] += df['servicesrevenueinbillion'] * 1000
+        df['sales_target'] = df['actual_sales'] * 0.9
+        df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+    else:
+        st.error("⚠️ Missing required columns in dataset.")
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
@@ -147,3 +167,6 @@ if df is not None:
     if st.button("🔍 Generate AI Insights"):
         ai_insights = generate_ai_insights(user_role)
         st.write(ai_insights)
+
+else:
+    st.error("⚠️ No data loaded. Check database or uploaded file.")
