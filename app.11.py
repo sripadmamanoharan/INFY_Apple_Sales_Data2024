@@ -79,13 +79,16 @@ if df is not None:
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     def generate_ai_insights(role):
-    try:
-        small_df = df.head(20)  # Only send 20 rows to AI
-        prompt = f"Analyze this sales data for {role}: {small_df.to_string(index=False)}"
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return response.content
-    except Exception as e:
-        return f"⚠️ AI Model Error: {e}"
+        try:
+            small_df = df.head(20)  # Only send 20 rows to AI
+            prompt = f"Analyze this sales data for {role}: {small_df.to_string(index=False)}"
+        
+            response = llm.invoke([HumanMessage(content=prompt)])
+            return response.content
+    
+        except Exception as e:
+            return f"⚠️ AI Model Error: {e}"  # Handles errors gracefully
+
 
 
     if st.button("🔍 Generate AI Insights"):
