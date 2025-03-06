@@ -26,34 +26,40 @@ uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx
 
 # ✅ Load Data Function
 @st.cache_data
-def load_data(uploaded_file):  # Function now takes uploaded_file as input
+def load_data(uploaded_file):  
     if uploaded_file is not None:
         file_extension = uploaded_file.name.split(".")[-1]
-        if file_extension == "csv":
-            df = pd.read_csv(uploaded_file, nrows=5000)  # Load only 5000 rows
-        elif file_extension == "xlsx":
-            df = pd.read_excel(uploaded_file, engine="openpyxl")  # Excel doesn't support nrows
-        else:
-            st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
+        try:
+            if file_extension == "csv":
+                df = pd.read_csv(uploaded_file, nrows=5000)  # Load 5000 rows for optimization
+            elif file_extension == "xlsx":
+                df = pd.read_excel(uploaded_file, engine="openpyxl")
+            else:
+                st.error("⚠️ Unsupported file format. Upload CSV or Excel.")
+                return None
+
+            # ✅ Ensure Column Names are Cleaned for Consistency
+            df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
+            return df  # Return cleaned DataFrame
+
+        except Exception as e:
+            st.error(f"⚠️ Error loading file: {e}")  # Show error message in Streamlit
             return None
+    else:
+        return None  # Return None if no file is uploaded
 
-        # ✅ Clean column names
-        df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
-        return df
-
-    return None  # Return None if no file uploaded
-
-# ✅ Call load_data() with uploaded_file argument
-if uploaded_file is not None:
-    df = load_data(uploaded_file)  # ✅ Pass the uploaded_file argument here
+# ✅ Call load_data() Safely
+if uploaded_file:
+    df = load_data(uploaded_file)  # ✅ Pass uploaded_file to function
 else:
     df = None
     st.warning("⚠️ No file uploaded.")
 
-# ✅ Display Data (Optional)
+# ✅ Display Data if Loaded
 if df is not None:
     st.write("✅ File uploaded successfully! Preview:")
     st.dataframe(df.head())  # Show first few rows
+
 
 
 
