@@ -11,8 +11,12 @@ from sqlalchemy import create_engine
 import sqlite3
 
 # ✅ Securely Load API Key
-os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+
+# ✅ Load API Key Securely
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+else:
+    st.error("⚠️ GOOGLE_API_KEY not found in secrets! Please add it to Streamlit secrets.")
 
 # 🎯 Streamlit UI
 st.title("📊 AI-Powered Sales KPI Dashboard")
