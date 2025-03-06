@@ -92,7 +92,7 @@ if df is not None:
 
 
     if st.button("🔍 Generate AI Insights"):
-    with st.spinner("⏳ Generating AI insights..."):
+        with st.spinner("⏳ Generating AI insights..."):
         ai_insights = generate_ai_insights(user_role)
     st.write(ai_insights)
 
