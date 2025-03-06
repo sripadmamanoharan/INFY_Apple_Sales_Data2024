@@ -57,8 +57,10 @@ if df is not None:
     st.dataframe(df.head())  # Show first few rows
 else:
     st.warning("⚠️ No file uploaded.")
-    
-    # ✅ Compute Sales Metrics
+
+# ✅ Compute Sales Metrics Only If Data is Loaded
+if df is not None and not df.empty:
+    # ✅ Ensure Key Sales Metrics Exist Safely
     df['actual_sales'] = (
         df.get('iphonesalesinmillionunits', 0) +
         df.get('ipadsalesinmillionunits', 0) +
@@ -68,6 +70,10 @@ else:
     df['actual_sales'] += df.get('servicesrevenueinbillion', 0) * 1000
     df['sales_target'] = df['actual_sales'] * 0.9
     df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
+
+    st.write("✅ Sales Metrics Computed Successfully!")
+else:
+    st.warning("⚠️ No valid data found. Please upload a correct CSV or Excel file.")
 
     # 📌 Select Role
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
