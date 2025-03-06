@@ -24,6 +24,7 @@ else:
 try:
     models = genai.list_models()
     available_models = [model.name for model in models]
+    print("🧠 Available Models:", available_models)  # Debugging line
 
     if "gemini-1.5-flash" in available_models:
         MODEL_NAME = "gemini-1.5-flash"  # Fastest option
@@ -42,6 +43,13 @@ st.sidebar.header("📂 Upload or Select Data Source")
 
 # ✅ File Upload Section
 uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx"])
+
+if uploaded_file is not None:
+    st.success(f"✅ File Uploaded: {uploaded_file.name}")
+    print("📂 File uploaded:", uploaded_file.name)  # Debugging line
+else:
+    st.warning("⚠️ No file uploaded!")
+    print("❌ No file uploaded.")  # Debugging line
 
 # ✅ Database Connection (SQLite Example)
 DATABASE_URL = "sqlite:///sales.db"
@@ -90,9 +98,9 @@ def load_from_database():
 def load_data():
     """Loads data from uploaded file or database."""
     if uploaded_file is not None:
-        st.write(f"✅ File Uploaded: {uploaded_file.name}")
-
+        st.write(f"✅ Processing file: {uploaded_file.name}")
         file_extension = uploaded_file.name.split(".")[-1]
+        
         try:
             if file_extension == "csv":
                 df = pd.read_csv(uploaded_file, encoding="utf-8", on_bad_lines="skip")
@@ -103,29 +111,28 @@ def load_data():
                 return None
 
             if df is not None and not df.empty:
+                print("✅ Data Loaded Successfully!", df.shape)  # Debugging line
                 st.write("✅ Data Loaded Successfully!")
-                df.columns = df.columns.str.strip().str.lower().str.replace(r"[^\w]", "", regex=True)
                 return df
             else:
+                print("❌ No data found in the file.")  # Debugging line
                 st.error("❌ File read error. No data found in the file.")
                 return None
         except Exception as e:
+            print(f"❌ Error reading file: {e}")  # Debugging line
             st.error(f"❌ Error reading file: {e}")
             return None
     else:
         st.warning("⚠️ No file uploaded, loading from database instead...")
-        df = load_from_database()
-        if df is None or df.empty:
-            st.error("❌ No data found in database.")
-        return df
+        return load_from_database()
 
 df = load_data()
 
 # ✅ Check if Data is Loaded
 if df is not None and not df.empty:
-    st.write("📌 Column Names in Dataset")
-    st.write(df.columns.tolist())
-    st.write(df.head())
+    st.write("📌 **Dataset Preview**")
+    st.dataframe(df)  # ✅ Ensure data is displayed in Streamlit UI
+    print("📊 Columns after cleaning:", df.columns.tolist())  # Debugging line
 
     # ✅ Ensure Key Sales Metrics Exist
     required_columns = [
@@ -151,21 +158,6 @@ if df is not None and not df.empty:
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
-
-    # ✅ KPI Metrics Based on Role
-    st.subheader(f"📈 KPI Metrics for {user_role}")
-    if user_role == "CXO":
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Revenue", f"${df['actual_sales'].sum():,.2f}")
-        col2.metric("Revenue Growth", f"{df['sales_vs_target'].mean():.2f}%")
-        col3.metric("Profit Margin", "18.5%")
-
-    elif user_role == "Division Head" and "region" in df.columns:
-        region = st.sidebar.selectbox("Select Region", df["region"].unique())
-        df_region = df[df["region"] == region]
-        col1, col2 = st.columns(2)
-        col1.metric(f"{region} Sales", f"${df_region['actual_sales'].sum():,.2f}")
-        col2.metric(f"{region} Sales Growth", f"{df_region['sales_vs_target'].mean():,.2f}%")
 
     # ✅ AI-Powered Sales Insights
     st.subheader("🔍 AI-Generated Sales Insights")
