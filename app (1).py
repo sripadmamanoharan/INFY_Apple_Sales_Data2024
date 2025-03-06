@@ -1,11 +1,11 @@
-
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import google.generativeai as genai
 import os
 
-# Set up Google Gemini API Key
+# Set Google Gemini API Key
 os.environ["GOOGLE_API_KEY"] = "your-gemini-api-key"  # Replace with your actual key
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
