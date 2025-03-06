@@ -11,12 +11,23 @@ from sqlalchemy import create_engine
 import sqlite3
 import urllib.request
 
-# ✅ Securely Load API Key
-if "GOOGLE_API_KEY" in st.secrets:
-    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+# ✅ Load API Key Securely
+GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", None)
+if not GOOGLE_API_KEY:
+    st.error("⚠️ GOOGLE_API_KEY not found in Streamlit secrets! Add it to secrets.toml")
 else:
-    st.error("⚠️ GOOGLE_API_KEY not found in secrets! Please add it to Streamlit secrets.")
+    os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+    genai.configure(api_key=GOOGLE_API_KEY)
+
+# ✅ Select a Working Gemini Model
+try:
+    models = genai.list_models()
+    available_models = [model.name for model in models]
+    MODEL_NAME = "gemini-pro" if "gemini-pro" in available_models else "gemini-pro-vision"
+    if MODEL_NAME not in available_models:
+        st.error("⚠️ No valid Gemini models found! Check your API key permissions.")
+except Exception as e:
+    st.error(f"❌ Error fetching available Gemini models: {e}")
 
 # 🎯 Streamlit UI
 st.title("📊 AI-Powered Sales KPI Dashboard")
@@ -44,7 +55,7 @@ def initialize_database():
     conn.commit()
     conn.close()
 
-# ✅ Check and Download Database if Missing
+# ✅ Download Database If Missing
 db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/raw/main/sales.db"
 
 if not os.path.exists("sales.db"):
@@ -52,7 +63,7 @@ if not os.path.exists("sales.db"):
     try:
         urllib.request.urlretrieve(db_url, "sales.db")
         st.success("✅ Database downloaded successfully!")
-        initialize_database()  # Ensure table exists
+        initialize_database()
     except Exception as e:
         st.error(f"❌ Database download failed: {e}")
 
@@ -72,7 +83,7 @@ def load_from_database():
 def load_data():
     """Loads data from uploaded file or database."""
     if uploaded_file is not None:
-        st.write(f"✅ File Uploaded: {uploaded_file.name}")  # Debug message
+        st.write(f"✅ File Uploaded: {uploaded_file.name}")
 
         file_extension = uploaded_file.name.split(".")[-1]
         try:
@@ -85,7 +96,7 @@ def load_data():
                 return None
 
             if df is not None and not df.empty:
-                st.write("✅ Data Loaded Successfully!")  # Debug message
+                st.write("✅ Data Loaded Successfully!")
                 df.columns = df.columns.str.strip().str.lower().str.replace(r"[^\w]", "", regex=True)
                 return df
             else:
@@ -106,8 +117,8 @@ df = load_data()
 # ✅ Check if Data is Loaded
 if df is not None and not df.empty:
     st.write("📌 Column Names in Dataset")
-    st.write(df.columns.tolist())  # Print column names
-    st.write(df.head())  # Show first few rows
+    st.write(df.columns.tolist())
+    st.write(df.head())
 
     # ✅ Ensure Key Sales Metrics Exist
     required_columns = [
@@ -140,7 +151,7 @@ if df is not None and not df.empty:
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Revenue", f"${df['actual_sales'].sum():,.2f}")
         col2.metric("Revenue Growth", f"{df['sales_vs_target'].mean():.2f}%")
-        col3.metric("Profit Margin", "18.5%")  # Placeholder
+        col3.metric("Profit Margin", "18.5%")
 
     elif user_role == "Division Head" and "region" in df.columns:
         region = st.sidebar.selectbox("Select Region", df["region"].unique())
@@ -149,29 +160,21 @@ if df is not None and not df.empty:
         col1.metric(f"{region} Sales", f"${df_region['actual_sales'].sum():,.2f}")
         col2.metric(f"{region} Sales Growth", f"{df_region['sales_vs_target'].mean():,.2f}%")
 
-    elif user_role == "Line Manager" and "salesperson" in df.columns:
-        salesperson = st.sidebar.selectbox("Select Salesperson", df["salesperson"].unique())
-        df_salesperson = df[df["salesperson"] == salesperson]
-        col1, col2 = st.columns(2)
-        col1.metric(f"{salesperson} Sales", f"${df_salesperson['actual_sales'].sum():,.2f}")
-        col2.metric(f"{salesperson} Target Achievement", f"{df_salesperson['sales_vs_target'].mean():,.2f}%")
-
-    # ✅ AI-Powered Sales Insights (Google Gemini)
+    # ✅ AI-Powered Sales Insights
     st.subheader("🔍 AI-Generated Sales Insights")
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
+    llm = ChatGoogleGenerativeAI(model=MODEL_NAME, google_api_key=GOOGLE_API_KEY)
 
     def generate_ai_insights(role):
         selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
         filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
 
         prompt = f"""
-        You are an AI sales analyst. Analyze the following sales data for the role: {role}.
+        Analyze the following sales data for the role: {role}.
         {filtered_df.to_string(index=False)}
 
         🔍 **Key Insights:**
         - **Top-Performing Region:**  
         - **Fastest-Growing Segment:**  
-        - **Slowest-Growing Segment:**  
         - **Unexpected Trends:**  
 
         🚀 **Strategies to Optimize Sales Performance**
