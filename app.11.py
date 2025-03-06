@@ -48,24 +48,16 @@ def load_data(uploaded_file):
     else:
         return None  # Return None if no file is uploaded
 
-# ✅ Call load_data() Safely
-if uploaded_file:
-    df = load_data(uploaded_file)  # ✅ Pass uploaded_file to function
-else:
-    df = None
-    st.warning("⚠️ No file uploaded.")
+# ✅ Load Data Safely (Fixing the TypeError)
+df = load_data(uploaded_file) if uploaded_file else None  # ✅ Pass uploaded_file correctly
 
 # ✅ Display Data if Loaded
 if df is not None:
     st.write("✅ File uploaded successfully! Preview:")
     st.dataframe(df.head())  # Show first few rows
-
-
-
-
-df = load_data()
-
-if df is not None:
+else:
+    st.warning("⚠️ No file uploaded.")
+    
     # ✅ Compute Sales Metrics
     df['actual_sales'] = (
         df.get('iphonesalesinmillionunits', 0) +
