@@ -11,23 +11,30 @@ from sqlalchemy import create_engine
 import sqlite3
 import urllib.request
 
-# ✅ Load API Key Securely
+# ✅ Securely Load API Key
 GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", None)
+
 if not GOOGLE_API_KEY:
     st.error("⚠️ GOOGLE_API_KEY not found in Streamlit secrets! Add it to secrets.toml")
 else:
     os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
     genai.configure(api_key=GOOGLE_API_KEY)
 
-# ✅ Select a Working Gemini Model
+# ✅ Select a Working Gemini Model (Fix for Deprecated Models)
 try:
     models = genai.list_models()
     available_models = [model.name for model in models]
-    MODEL_NAME = "gemini-pro" if "gemini-pro" in available_models else "gemini-pro-vision"
-    if MODEL_NAME not in available_models:
+
+    if "gemini-1.5-flash" in available_models:
+        MODEL_NAME = "gemini-1.5-flash"  # Fastest option
+    elif "gemini-1.5-pro" in available_models:
+        MODEL_NAME = "gemini-1.5-pro"  # More powerful
+    else:
         st.error("⚠️ No valid Gemini models found! Check your API key permissions.")
+        MODEL_NAME = None
 except Exception as e:
     st.error(f"❌ Error fetching available Gemini models: {e}")
+    MODEL_NAME = None
 
 # 🎯 Streamlit UI
 st.title("📊 AI-Powered Sales KPI Dashboard")
@@ -162,30 +169,34 @@ if df is not None and not df.empty:
 
     # ✅ AI-Powered Sales Insights
     st.subheader("🔍 AI-Generated Sales Insights")
-    llm = ChatGoogleGenerativeAI(model=MODEL_NAME, google_api_key=GOOGLE_API_KEY)
 
-    def generate_ai_insights(role):
-        selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
-        filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
+    if MODEL_NAME:
+        llm = ChatGoogleGenerativeAI(model=MODEL_NAME, google_api_key=GOOGLE_API_KEY)
 
-        prompt = f"""
-        Analyze the following sales data for the role: {role}.
-        {filtered_df.to_string(index=False)}
+        def generate_ai_insights(role):
+            selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
+            filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
 
-        🔍 **Key Insights:**
-        - **Top-Performing Region:**  
-        - **Fastest-Growing Segment:**  
-        - **Unexpected Trends:**  
+            prompt = f"""
+            Analyze the following sales data for the role: {role}.
+            {filtered_df.to_string(index=False)}
 
-        🚀 **Strategies to Optimize Sales Performance**
-        """
+            🔍 **Key Insights:**
+            - **Top-Performing Region:**  
+            - **Fastest-Growing Segment:**  
+            - **Unexpected Trends:**  
 
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return response.content
+            🚀 **Strategies to Optimize Sales Performance**
+            """
 
-    if st.button("🔍 Generate AI Insights"):
-        ai_insights = generate_ai_insights(user_role)
-        st.write(ai_insights)
+            response = llm.invoke([HumanMessage(content=prompt)])
+            return response.content
+
+        if st.button("🔍 Generate AI Insights"):
+            ai_insights = generate_ai_insights(user_role)
+            st.write(ai_insights)
+    else:
+        st.error("⚠️ No valid Gemini model available. Please check your API key permissions.")
 
 else:
     st.error("⚠️ No data loaded. Check database or uploaded file.")
