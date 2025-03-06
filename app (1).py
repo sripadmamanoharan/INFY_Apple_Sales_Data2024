@@ -75,11 +75,11 @@ def load_data():
     else:
         df = load_from_database()  # Load from database if no file is uploaded
 
-    import re
+import re
 
 df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
 
-    return df
+return df
 
 df = load_data()
 
