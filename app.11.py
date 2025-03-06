@@ -22,8 +22,10 @@ st.sidebar.header("📂 Upload or Select Data Source")
 uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx"])
 
 # ✅ Database Connection (SQLite Example)
-DATABASE_URL = "sqlite:///sales.db" 
+DATABASE_URL = "sqlite:///sales.db"
+
 def initialize_database():
+    """Create database table if it doesn't exist."""
     conn = sqlite3.connect("sales.db")
     cursor = conn.cursor()
     cursor.execute("""
@@ -37,7 +39,7 @@ def initialize_database():
     """)
     conn.commit()
     conn.close()
-    
+
 import urllib.request
 
 db_url = "https://github.com/sripadmamanoharan/INFY_Apple_Sales_Data2024/blob/main/sales.db"
@@ -48,8 +50,8 @@ if not os.path.exists("sales.db"):
     st.success("✅ Database downloaded successfully!")
     initialize_database()  # Ensure the table exists after download
 
-
 def load_from_database():
+    """Load data from SQLite database."""
     engine = create_engine(DATABASE_URL)
     try:
         df = pd.read_sql("SELECT * FROM sales_data", con=engine)
@@ -59,11 +61,10 @@ def load_from_database():
         initialize_database()  # Calls function to create table if missing
         return pd.DataFrame()  # Returns an empty DataFrame so the app doesn't break
 
-
 # ✅ Load Data Function (CSV, Excel, or Database)
-
 @st.cache_data
 def load_data():
+    """Load sales data from uploaded file or database."""
     if uploaded_file is not None:
         file_extension = uploaded_file.name.split(".")[-1]
         if file_extension == "csv":
@@ -78,30 +79,29 @@ def load_data():
 
     # ✅ Ensure Column Names are Cleaned for Consistency
     df.columns = df.columns.str.strip().str.lower().str.replace(r'[^\w]', '', regex=True)
-
-    return df  # Properly indented return statement
+    return df  
 
 # ✅ Load the Data
 df = load_data()
 
-if df is not None:
+if df is not None and not df.empty:
     # ✅ Ensure Key Sales Metrics Exist
-df['actual_sales'] = (
-    df.get('iphonesalesinmillionunits', 0) +  # Use `.get()` to avoid KeyError
-    df.get('ipadsalesinmillionunits', 0) +
-    df.get('macsalesinmillionunits', 0) +
-    df.get('wearablesinmillionunits', 0)
-)
-df['actual_sales'] += df.get('servicesrevenueinbillion', 0) * 1000
-df['sales_target'] = df['actual_sales'] * 0.9
-df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
-
+    df['actual_sales'] = (
+        df.get('iphonesalesinmillionunits', 0) +  # Use `.get()` to avoid KeyError
+        df.get('ipadsalesinmillionunits', 0) +
+        df.get('macsalesinmillionunits', 0) +
+        df.get('wearablesinmillionunits', 0)
+    )
+    df['actual_sales'] += df.get('servicesrevenueinbillion', 0) * 1000
+    df['sales_target'] = df['actual_sales'] * 0.9
+    df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
 
     # 📌 Select Role (CXO, Division Head, Line Manager)
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
 
     # ✅ KPI Metrics Based on Role
     st.subheader(f"📈 KPI Metrics for {user_role}")
+    
     if user_role == "CXO":
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Revenue", f"${df['actual_sales'].sum():,.2f}")
@@ -127,6 +127,7 @@ df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
     llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     def generate_ai_insights(role):
+        """Generate AI insights based on user role."""
         selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
         filtered_df = df[selected_columns] if all(col in df.columns for col in selected_columns) else df
 
