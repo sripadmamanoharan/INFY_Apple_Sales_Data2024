@@ -137,15 +137,20 @@ if df is not None and not df.empty:
         return response.content
 
     if st.button("📊 Generate AI Visualization"):
-        with st.spinner("⏳ Generating Chart with AI..."):
-            ai_code = generate_ai_chart(user_role)
-            st.code(ai_code, language="python")
+    with st.spinner("⏳ Generating Chart with AI..."):
+        ai_code = generate_ai_chart(user_role)
+        st.code(ai_code, language="python")
 
-            try:
-                local_env = {}
-                exec(ai_code, {"pd": pd, "plt": plt, "sns": sns}, local_env)
-            except Exception as e:
-                st.error(f"⚠️ Failed to run AI-generated code: {e}")
+        # ✅ Clean AI code if it includes ```python or extra text
+        if ai_code.startswith("```"):
+            ai_code = ai_code.strip("`").replace("python", "").strip()
+
+        try:
+            local_env = {}
+            exec(ai_code, {"pd": pd, "plt": plt, "sns": sns}, local_env)
+        except Exception as e:
+            st.error(f"⚠️ Failed to run AI-generated code: {e}")
+
 
     # ✅ Natural Language Q&A
     st.subheader("💬 Ask a Question About Your Sales Data")
