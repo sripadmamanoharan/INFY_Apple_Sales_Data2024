@@ -125,6 +125,7 @@ if df is not None and not df.empty:
         )
 
     # ✅ AI Chart Generator
+   
     def generate_ai_chart(role):
         prompt = f"""
         You are a Python data assistant. Generate a Python code snippet using matplotlib or seaborn 
@@ -136,21 +137,23 @@ if df is not None and not df.empty:
         response = llm.invoke([HumanMessage(content=prompt)])
         return response.content
 
+    # ✅ Generate and display AI-generated visualization
     if st.button("📊 Generate AI Visualization"):
         with st.spinner("⏳ Generating Chart with AI..."):
-            ai_code = generate_ai_chart(user_role)
-            st.code(ai_code, language="python")
+        ai_code = generate_ai_chart(user_role)
+        st.code(ai_code, language="python")
 
-        # ✅ Clean AI code if it includes ```python or extra text
+        # ✅ Clean the AI code (in case it includes markdown formatting)
         if ai_code.startswith("```"):
             ai_code = ai_code.strip("`").replace("python", "").strip()
+        ai_code = ai_code.replace("plt.show()", "")  # Remove plt.show() if included
 
         try:
             local_env = {}
             exec(ai_code, {"pd": pd, "plt": plt, "sns": sns}, local_env)
+            st.pyplot(plt.gcf())  # ✅ Display the current plot
         except Exception as e:
             st.error(f"⚠️ Failed to run AI-generated code: {e}")
-
 
     # ✅ Natural Language Q&A
     st.subheader("💬 Ask a Question About Your Sales Data")
