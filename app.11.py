@@ -137,9 +137,9 @@ if df is not None and not df.empty:
         return response.content
 
     if st.button("📊 Generate AI Visualization"):
-    with st.spinner("⏳ Generating Chart with AI..."):
-        ai_code = generate_ai_chart(user_role)
-        st.code(ai_code, language="python")
+        with st.spinner("⏳ Generating Chart with AI..."):
+            ai_code = generate_ai_chart(user_role)
+            st.code(ai_code, language="python")
 
         # ✅ Clean AI code if it includes ```python or extra text
         if ai_code.startswith("```"):
