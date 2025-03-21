@@ -12,19 +12,19 @@ import sqlite3
 import io
 from datetime import datetime
 
-# ✅ Securely Load API Key
+# Securely Load API Key
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
-# 🎯 Streamlit UI
+# Streamlit UI
 st.set_page_config(page_title="AI Sales Dashboard", layout="wide")
 st.title("📊 AI-Powered Sales KPI Dashboard")
 st.sidebar.header("📂 Upload or Select Data Source")
 
-# ✅ File Upload Section
+# File Upload Section
 uploaded_file = st.sidebar.file_uploader("Upload Sales Data", type=["csv", "xlsx"])
 
-# ✅ Load Data Function
+# Load Data Function
 @st.cache_data
 def load_data(uploaded_file):
     if uploaded_file is not None:
@@ -46,14 +46,14 @@ def load_data(uploaded_file):
         st.warning("⚠️ No file uploaded.")
         return None
 
-# ✅ Load Data
+#  Load Data
 df = load_data(uploaded_file)
 
-# ✅ Initialize AI Model
+#  Initialize AI Model
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=os.environ["GOOGLE_API_KEY"])
 
 if df is not None and not df.empty:
-    # ✅ Compute Sales Metrics
+    # Compute Sales Metrics
     df['actual_sales'] = (
         df.get('iphonesalesinmillionunits', 0) +
         df.get('ipadsalesinmillionunits', 0) +
@@ -64,7 +64,7 @@ if df is not None and not df.empty:
     df['sales_target'] = df['actual_sales'] * 0.9
     df['sales_vs_target'] = df['actual_sales'] - df['sales_target']
 
-    # ✅ Role Selection
+    #  Role Selection
     user_role = st.sidebar.selectbox("Choose Your Role", ["CXO", "Division Head", "Line Manager"])
     st.subheader(f"📈 KPI Metrics for {user_role}")
 
@@ -88,7 +88,7 @@ if df is not None and not df.empty:
         col1.metric(f"{salesperson} Sales", f"${df_salesperson['actual_sales'].sum():,.2f}")
         col2.metric(f"{salesperson} Target Achievement", f"{df_salesperson['sales_vs_target'].mean():,.2f}%")
 
-    # ✅ AI Insights
+    #  AI Insights
     st.subheader("🔍 AI-Generated Sales Insights")
     def generate_ai_insights(role):
         selected_columns = ["region", "actual_sales", "sales_target", "sales_vs_target"]
@@ -113,7 +113,7 @@ if df is not None and not df.empty:
             ai_insights = generate_ai_insights(user_role)
         st.write(ai_insights)
 
-        # ✅ Download Insights
+        #  Download Insights
         buffer = io.StringIO()
         buffer.write("Sales KPI AI Insights\n\n")
         buffer.write(ai_insights)
@@ -124,7 +124,7 @@ if df is not None and not df.empty:
             mime="text/plain"
         )
 
-    # ✅ AI Chart Generator
+    # AI Chart Generator
     def generate_ai_chart(role):
         prompt = f"""
         You are a Python data assistant. Generate a Python code snippet using matplotlib or seaborn 
@@ -136,7 +136,7 @@ if df is not None and not df.empty:
         response = llm.invoke([HumanMessage(content=prompt)])
         return response.content
 
-    if st.button("📊 Generate AI Visualization"):
+    if st.button("Generate AI Visualization"):
         with st.spinner("⏳ Generating Chart with AI..."):
             ai_code = generate_ai_chart(user_role)
             st.code(ai_code, language="python")
@@ -152,7 +152,7 @@ if df is not None and not df.empty:
             except Exception as e:
                 st.error(f"⚠️ Failed to run AI-generated code: {e}")
 
-    # ✅ Natural Language Q&A
+    # Natural Language Q&A
     st.subheader("💬 Ask a Question About Your Sales Data")
     user_query = st.text_input("Example: 'Which region has the highest revenue?'")
 
