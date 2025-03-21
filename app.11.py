@@ -136,10 +136,10 @@ if df is not None and not df.empty:
         response = llm.invoke([HumanMessage(content=prompt)])
         return response.content
 
-    if st.button("📊 Generate AI Visualization"):
-    with st.spinner("⏳ Generating Chart with AI..."):
-        ai_code = generate_ai_chart(user_role)
-        st.code(ai_code, language="python")
+        if st.button("📊 Generate AI Visualization"):
+            with st.spinner("⏳ Generating Chart with AI..."):
+                ai_code = generate_ai_chart(user_role)
+                st.code(ai_code, language="python")
 
         try:
             # Safely execute AI-generated chart code
