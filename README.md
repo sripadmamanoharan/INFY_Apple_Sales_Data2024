@@ -55,16 +55,6 @@ Use a sample dataset **(CSV/XLSX format)** with columns like:
 ```csv
 Date, Region, iPhone Sales (in million units), iPad Sales (in million units), Mac Sales (in million units), Wearables (in million units), Services Revenue (in billion $)
 ```
-
----
-
-## **Screenshots**
- **Dashboard Interface:**
-![Sales Dashboard](https://yourimageurl.com/dashboard.png)
-
- **AI Insights:**
-![AI Insights](https://yourimageurl.com/ai_insights.png)
-
 ---
 
 ##  **Future Enhancements**
