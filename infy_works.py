@@ -13,7 +13,7 @@ import google.generativeai as genai
 import os
 
 # Set Google Gemini API Key
-os.environ["GOOGLE_API_KEY"] = "AIzaSyCskTdzvoDekYyxWAAQJfWcFAUAakIPtKo"  # Replace with your actual key
+os.environ["GOOGLE_API_KEY"] = "AIzaSyAXClTjGxX7Ot8_heJGcyxAk3CaL-wYs4Q"  # Replace with your actual key
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
 print("✅ Google Gemini API Connected!")
