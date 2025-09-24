@@ -13,10 +13,14 @@ import google.generativeai as genai
 import os
 
 # Set Google Gemini API Key
-os.environ["GOOGLE_API_KEY"] = "AIzaSyAXClTjGxX7Ot8_heJGcyxAk3CaL-wYs4Q"  # Replace with your actual key
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    st.info("⚠️ Please add GOOGLE_API_KEY in Streamlit secrets to enable AI insights.")
+else:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.messages import HumanMessage
+    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GOOGLE_API_KEY)
 
-print("✅ Google Gemini API Connected!")
 
 from google.colab import files
 uploaded = files.upload()
