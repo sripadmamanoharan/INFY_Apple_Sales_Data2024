@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1YKd86SUl5HvVtJqssIsKHN5w25K3-JAd
 """
 
-pip install pandas streamlit matplotlib plotly google-generativeai langchain
+! pip install pandas streamlit matplotlib plotly google-generativeai langchain
 
 import google.generativeai as genai
 import os
